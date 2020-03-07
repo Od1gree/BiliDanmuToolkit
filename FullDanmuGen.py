@@ -307,7 +307,7 @@ class Danmu(object):
 
 if __name__=='__main__':
     dm = Danmu()
-    dm.from_url('https://www.bilibili.com/video/av83828800')
+    dm.from_url('https://www.bilibili.com/video/av43526')
 
 # f = open("/Users/Od1gree/Documents/Projects/PycharmProjects/test1/1.xml", mode='rt', encoding='utf-8')
 # d.xml_file(f)
