@@ -57,6 +57,7 @@ class Danmu(object):
             self.danmuSet.append(danmu_info[7])
             overall += 1
 
+        print("实时弹幕共有", overall, "个, 开始抓取历史弹幕")
         self.timeProgress = int(time.time())
         progress_time_bj = datetime.fromtimestamp(self.timeProgress, timezone(timedelta(hours=8)))
         progress_date_str = datetime.strftime(progress_time_bj, "%Y-%m-%d")
@@ -307,7 +308,7 @@ class Danmu(object):
 
 if __name__=='__main__':
     dm = Danmu()
-    dm.from_url('https://www.bilibili.com/video/av43526')
+    dm.from_url('https://www.bilibili.com/video/av78978719')
 
 # f = open("/Users/Od1gree/Documents/Projects/PycharmProjects/test1/1.xml", mode='rt', encoding='utf-8')
 # d.xml_file(f)
