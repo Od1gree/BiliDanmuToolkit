@@ -1,0 +1,7 @@
+.idea
+.DS_Store
+*.iml
+out
+gen
+cookie.cfg
+!/harvest/av43526_危险的黑子/*
