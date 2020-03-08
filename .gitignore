@@ -5,3 +5,6 @@ out
 gen
 cookie.cfg
 !/harvest/av43526_危险的黑子/*
+/harvest/*
+test.py
+

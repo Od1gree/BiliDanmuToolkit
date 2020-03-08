@@ -27,6 +27,7 @@
 * 每次API请求时间间隔5秒（建议大家善用API，尽量不要频繁发起请求，减少服务器压力.上一次禁用历史弹幕API的时候B站官方的解释是服务器压力过大.）
 * 支持分P视频.
 * 由于每次请求的历史弹幕大概率会涵盖多天的内容, 因此通过读取每次获取弹幕的最早发送时间来确定下一次请求的历史弹幕的日期, 而不是请求每一天的历史弹幕, 从而减少请求次数.
+* 支持命令行带参数运行
 
 ### TODO
 
@@ -35,7 +36,6 @@
 * 批量添加av号.
 
 ## 使用方法
-
 1. 配置python环境.
 2. 使用电脑打开视频页面，复制地址栏中的链接，注意删除后面的无用项，最终复制得到以下两种样式的url
    1. `https://www.bilibili.com/video/av810872?p=1`
@@ -44,18 +44,32 @@
 
 ```
 if __name__=='__main__':
+    target = ''
+    if len(sys.argv)<2:
+        target = 'https://www.bilibili.com/video/av314'  # 将你的网址粘贴在这里
+    else:
+        target = sys.argv[1]
+    print('开始分析', target)
     dm = Danmu()
-    dm.from_url('https://www.bilibili.com/video/av43526') # 替换网址，注意保留引号
+    dm.from_url(target)
 ```
 
 4. 将`cookie_sample.cfg`文件改名为`cookie.cfg`，删除里面的内容并粘贴自己的B站cookie到文件中(请求历史弹幕的必要条件).注意文本编码必须为`utf-8`.
 5. 运行程序
 6. 获取的弹幕文件在`harvest`文件夹中.
 
+命令行玩家无视上面的第三个步骤, 启动方式如下:
+```bash
+$ cd BilibiliHistoryDanmuDownloader/
+$ python FullDanmuGen.py 'https://www.bilibili.com/video/av314'
+```
+
 注1: B站cookie直接从浏览器中查找cookie内容,并粘贴到`cookie.cfg`即可, 不要带"Cookie:".
 注2: 获取到的弹幕样例在harvest文件夹.
 
 ## 注意事项
+B站对API接口的限制以及弹幕数据库的限制会影响获取的效果, 有时会因官方服务器波动而获取不全面, 需要等待几天后再尝试.
+
 B站cookie直接从浏览器中查找cookie内容,并粘贴到`cookie.cfg`即可, 不要带"Cookie:".
 
 获取到的弹幕样例在harvest文件夹.

@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta, timezone
 import xml.etree.ElementTree as et
 import json
+import sys
 
 '''
 弹幕格式如下
@@ -74,12 +75,14 @@ class Danmu(object):
 
         current_danmu = []
         while progress_time_bj > pub_time_bj:
-            count = 0
+            count = 0  # 统计本次返回的与已有弹幕 rowID 不重复的弹幕数量
+            amount = 0  # 统计本次返回的弹幕总数量, 若小于弹幕池限制则可以判定抓取完毕
             req_date_str = progress_date_str
             xml_str = self._get_history_danmu(req_date_str)
             root = et.fromstring(xml_str)
             earliest = self.timeProgress
             for danmu in root.findall('d'):
+                amount += 1
                 danmu_info = danmu.attrib['p'].split(',')
                 if danmu_info[7] not in self.danmuSet:
                     self.xmlRoot.append(danmu)
@@ -120,6 +123,10 @@ class Danmu(object):
                 progress_date_str = test_date_str
             req_date_str = progress_date_str
             self.timeProgress = self._write_record(datetime.timestamp(progress_time_bj))
+
+            # 获取到的弹幕数量小于弹幕池上限说明到头了
+            if amount < int(root.find('maxlimit').text) - 1 and amount > 0:
+                break
 
         self.xmlObj.write(self.fileName+'.xml', encoding='utf-8')
 
@@ -307,30 +314,12 @@ class Danmu(object):
 
 
 if __name__=='__main__':
+    target = ''
+    if len(sys.argv)<2:
+        target = 'https://www.bilibili.com/video/av314'  # 将你的网址粘贴在这里
+    else:
+        target = sys.argv[1]
+    print('开始分析', target)
     dm = Danmu()
-    dm.from_url('https://www.bilibili.com/video/av78978719')
+    dm.from_url(target)
 
-# f = open("/Users/Od1gree/Documents/Projects/PycharmProjects/test1/1.xml", mode='rt', encoding='utf-8')
-# d.xml_file(f)
-
-# s = f.read()
-# print(s)
-# d.xmlStr(s)
-
-# 删除一个弹幕
-# child = d.xml_root.findall('d')
-# for item in child:
-#     # attrib value str
-#     a = item.attrib['p']
-#     if a.split(',')[1] == '1':
-#         d.xml_root.remove(item)
-
-# child = d.xmlRoot.findall('d')
-# for item in child:
-#     # attrib value str
-#     a = item.attrib['p']
-#     print(item.text)
-#     if a.split(',')[1] != '1':
-#         d.xmlRoot.append(item)
-#
-# d.xmlObj.write('test.xml', encoding='utf-8')
