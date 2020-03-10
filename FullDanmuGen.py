@@ -125,7 +125,8 @@ class Danmu(object):
             self.timeProgress = self._write_record(datetime.timestamp(progress_time_bj))
 
             # 获取到的弹幕数量小于弹幕池上限说明到头了
-            if amount < int(root.find('maxlimit').text) - 1 and amount > 0:
+            if amount < int(root.find('maxlimit').text) and amount > 0:
+                print("弹幕数", amount, "少于上限且不为零, 可结束获取.")
                 break
 
         self.xmlObj.write(self.fileName+'.xml', encoding='utf-8')
