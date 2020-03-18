@@ -7,6 +7,8 @@ import xml.etree.ElementTree as et
 import json
 import sys
 
+from DanmuSpider import Spider
+
 '''
 弹幕格式如下
 <时间(秒),样式,字号,颜色,UNIX-time,弹幕池,用户,rowID>
@@ -17,7 +19,7 @@ class Danmu(object):
         self.av = ''
         self.page = 0
         self.url = ''
-        self.cid = 0
+        self.cid = "0"
         self.title = ''
         self.timeUnix = 0
         self.timeProgress = 0
@@ -25,9 +27,11 @@ class Danmu(object):
         self.xmlObj = None
         self.xmlRoot = None
         self.fileName = ''
+        self.cookie_path = ''
 
-    def from_url(self, url: str):
+    def from_url(self, url: str, cookie_path: str = 'cookie.cfg'):
         self.url = url
+        self.cookie_path = cookie_path
         temp_lst = url.split('/')[-1].split('?')
         self.av = temp_lst[0]
         if len(temp_lst) is 1:
@@ -35,7 +39,7 @@ class Danmu(object):
         else:
             self.page = int(temp_lst[1][2:])
 
-        self._get_info(self._get_html())
+        self._get_info(url)
 
         self._all_danmu()
 
@@ -170,31 +174,14 @@ class Danmu(object):
             self.fileName = record['fileName']
 
     def _get_current_danmu(self):
-        req = 'https://api.bilibili.com/x/v1/dm/list.so?oid=%s' % self.cid
-        headers = {
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-site",
-            "Host": "api.bilibili.com",
-            "Origin": "https://www.bilibili.com",
-            "Referer": self.url,
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36",
-        }
-        response = None
-        try:
-            response = requests.get(url=req, headers=headers)
-            assert response.status_code == 200
+        content_bytes = Spider.get_current_danmu(self.cid, self.url)
 
-            # 将要与历史弹幕整合的弹幕文件
-            with open(self.fileName+'.xml', 'wb') as f:
-                f.write(response.content)
-            # 当前弹幕池(上限数量)的弹幕
-            with open(self.fileName+'_latest.xml', 'wb') as f:
-                f.write(response.content)
-        except Exception as e:
-            if response is not None:
-                print('获取弹幕出错', response.url, '\nErrcode:', response.status_code)
-            print('获取弹幕异常或文件读写异常', e)
+        # 将要与历史弹幕整合的弹幕文件
+        with open(self.fileName+'.xml', 'wb') as f:
+            f.write(content_bytes)
+        # 当前弹幕池(上限数量)的弹幕
+        with open(self.fileName+'_latest.xml', 'wb') as f:
+            f.write(content_bytes)
 
     def _get_history_danmu(self, date: str):
         """
@@ -202,89 +189,22 @@ class Danmu(object):
         :param date: date string in 'YYYY-MM-DD' format
         :return: xml string in UTF-8 encoding
         """
-        req = 'https://api.bilibili.com/x/v2/dm/history?type=1&oid=' + str(self.cid) + '&date=' + date
-        time.sleep(5)
-        print('request history danmu:', req)
-
-        cookie = ''
-        try:
-            config = open('cookie.cfg', 'rt')
-            cookie = config.read()
-            config.close()
-            #print('cookie is:\n', cookie)
-        except Exception as e:
-            print('读取cookie配置文件错误', '\ncontent:', e)
-
-        header = {
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Cookie': cookie,
-            'Connection': 'keep-alive',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36',
-            'Sec-Fetch-Site': 'same-site',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Origin': 'https://www.bilibili.com',
-            'Referer': self.url,
-        }
-
-        response = None
-        try:
-            response = requests.get(req, headers=header)
-            assert response.status_code==200
-            xml_str = response.content.decode('utf-8')
-            with open(self.fileName + '_' + date+'.xml', 'wb') as f:
-                f.write(response.content)
-            print('data length', len(xml_str))
-            return xml_str
-        except AssertionError:
-            print("状态码错误:", response.status_code)
-        except Exception as e:
-            if response is not None:
-                print("状态码:", response.status_code)
-            print("请求历史弹幕失败\n", e)
+        content_bytes = Spider.get_history_danmu(self.cid, self.url, date, self.cookie_path)
+        xml_str = content_bytes.decode('utf-8')
+        with open(self.fileName + '_' + date + '.xml', 'wb') as f:
+            f.write(content_bytes)
+        print('data length', len(xml_str))
+        return xml_str
 
     def _get_history_month(self, month: str):
-        req = 'https://api.bilibili.com/x/v2/dm/history/index?type=1&oid=' + str(self.cid) + '&month=' + month
-        time.sleep(5)
-        print('request history month', req)
-        cookie = ''
-        try:
-            config = open('cookie.cfg', 'rt')
-            cookie = config.read()
-            config.close()
-            print('cookie is:\n', cookie)
-        except Exception as e:
-            print('读取cookie配置文件错误', '\ncontent:', e)
+        content_bytes = Spider.get_history_month(self.cid, self.url, month, self.cookie_path)
+        json_str = content_bytes.decode('utf-8')
+        return json_str
 
-        header = {
-            'Accept': 'application/json, text/javascript, */*; q=0.01',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Connection': 'keep-alive',
-            'Cookie': cookie,
-            'Host': 'api.bilibili.com',
-            'Origin': 'https://www.bilibili.com',
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-site',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36'
-        }
-        response = None
-        try:
-            response = requests.get(req, headers=header)
-            assert response.status_code == 200
-            json_str = response.content.decode('utf-8')
-            return json_str
-        except AssertionError:
-            print("状态码错误:", response.status_code)
-        except Exception as e:
-            if response is not None:
-                print("状态码:", response.status_code)
-            print("请求月份弹幕信息失败\n", e)
 
-    def _get_info(self, html):
+
+    def _get_info(self, url: str):
+        html = Spider.get_html(url)
         pattern = re.compile(r'"cid":(\d+),"page":%s' % self.page)
         pattern1 = re.compile(r'"title":"(.*?)","pubdate":(\d+)')
         self.cid = re.search(pattern, html).group(1)
@@ -295,23 +215,6 @@ class Danmu(object):
             os.mkdir(folder)
         self.fileName = folder + self.av + '_' + self.title + '_p' + str(self.page)
 
-    def _get_html(self):
-        headers = {
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Host": "www.bilibili.com",
-            "Referer": "https://search.bilibili.com",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36",
-        }
-        response = None
-        try:
-            response = requests.get(url=self.url, headers=headers)
-            assert response.status_code == 200
-            return response.text
-
-        except Exception:
-            print('请求网页异常', response.url)
-            return None
 
 
 if __name__=='__main__':
