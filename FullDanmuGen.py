@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 import xml.etree.ElementTree as et
 import json
 import sys
+from bs4 import BeautifulSoup
 
 from DanmuSpider import Spider
 
@@ -16,10 +17,11 @@ from DanmuSpider import Spider
 
 class Danmu(object):
     def __init__(self):
-        self.av = ''
+        self.no = ''
         self.page = 0
         self.url = ''
         self.cid = "0"
+        self.ssid = "ss0"
         self.title = ''
         self.timeUnix = 0
         self.timeProgress = 0
@@ -32,15 +34,13 @@ class Danmu(object):
     def from_url(self, url: str, cookie_path: str = 'cookie.cfg'):
         self.url = url
         self.cookie_path = cookie_path
-        temp_lst = url.split('/')[-1].split('?')
-        self.av = temp_lst[0]
-        if len(temp_lst) is 1:
-            self.page = 1
+        temp_lst = url.split('/')[-1]
+        if temp_lst[-1][0] == 'a':
+            av_info = temp_lst.split('?')
+            self.no, self.page = av_info[0], av_info[1] if len(av_info) > 1 else 1
+            self._get_info_av(url)
         else:
-            self.page = int(temp_lst[1][2:])
-
-        self._get_info(url)
-
+            self._get_info_ep(url)
         self._all_danmu()
 
     def _all_danmu(self):
@@ -78,6 +78,7 @@ class Danmu(object):
         history_month_list = []
 
         current_danmu = []
+        flag_zero = 0
         while progress_time_bj > pub_time_bj:
             count = 0  # 统计本次返回的与已有弹幕 rowID 不重复的弹幕数量
             amount = 0  # 统计本次返回的弹幕总数量, 若小于弹幕池限制则可以判定抓取完毕
@@ -133,6 +134,13 @@ class Danmu(object):
                 print("弹幕数", amount, "少于上限且不为零, 可结束获取.")
                 break
 
+            if flag_zero > 5:
+                print("连续五天无获得弹幕,终止获取.")
+                break
+
+            if amount == 0:
+                flag_zero += 1
+
         self.xmlObj.write(self.fileName+'.xml', encoding='utf-8')
 
         # 由于XMLElementTree.write()的xml_declaration参数在弹幕播放器无法识别 (它多了一个回车符合,并且字符串是单引号)
@@ -147,7 +155,7 @@ class Danmu(object):
     def _write_record(self, progress_time):
         # TODO: bug fix "require bytes not str"
         # record = {
-        #     'av': self.av,
+        #     'av': self.no,
         #     'page': self.page,
         #     'url': self.url,
         #     'cid': self.cid,
@@ -164,7 +172,7 @@ class Danmu(object):
     def resume_record(self, path: str):
         with open(path, 'rb') as load_file:
             record = json.load(load_file)
-            self.av = record['av']
+            self.no = record['av']
             self.page = record['page']
             self.url = record['url']
             self.cid = record['cid']
@@ -201,20 +209,47 @@ class Danmu(object):
         json_str = content_bytes.decode('utf-8')
         return json_str
 
-
-
-    def _get_info(self, url: str):
+    def _get_info_av(self, url: str):
         html = Spider.get_html(url)
         pattern = re.compile(r'"cid":(\d+),"page":%s' % self.page)
         pattern1 = re.compile(r'"title":"(.*?)","pubdate":(\d+)')
         self.cid = re.search(pattern, html).group(1)
         self.title, timeUnix_str = re.search(pattern1, html).groups()
         self.timeUnix = int(timeUnix_str)
-        folder = "harvest/" + self.av + '_' + self.title + "/"
+        folder = "harvest/" + self.no + '_' + self.title + "/"
         if not os.path.exists(folder):
             os.mkdir(folder)
-        self.fileName = folder + self.av + '_' + self.title + '_p' + str(self.page)
+        self.fileName = folder + self.no + '_' + self.title + '_p' + str(self.page)
 
+    # 番剧没有视频发布时间,需要通过获取 历史弹幕月 来确定历史弹幕停止时间
+    def _get_info_ep(self, url: str):
+        html = Spider.get_html(url)
+        soup = BeautifulSoup(html, features="html.parser")
+        tag_list = soup.find_all("script")
+        ep_json_str = None
+        for item in tag_list:
+            if r"__INITIAL_STATE__" in item.text:
+                index_start = item.text.find('=')
+                index_end = item.text.find(';')
+                ep_json_str = item.text[index_start+1:index_end]
+                break
+        ep_json = json.loads(ep_json_str)
+        bangumi = ep_json['epInfo']
+
+        # url后缀为ss番号时, epInfo为空,需要去列表里面找第一项(网页端自动显示第一项)
+        if ep_json['epInfo']['loaded'] is False:
+            bangumi = ep_json['epList'][0]
+        print(ep_json)
+        self.cid = str(bangumi['cid'])
+        self.no = 'ep' + str(bangumi['id'])
+        self.title = ep_json['h1Title']
+        self.timeUnix = -1
+        self.ssid = "ss" + str(ep_json['mediaInfo']['ssId'])
+        self.page = bangumi['title']
+        folder = "harvest/" + self.ssid + '_' + ep_json['mediaInfo']['title'] + "/"
+        if not os.path.exists(folder):
+            os.mkdir(folder)
+        self.fileName = folder + self.no + '_' + self.title + '_p' + self.page
 
 
 if __name__=='__main__':

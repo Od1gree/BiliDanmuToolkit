@@ -62,7 +62,7 @@ url为 `https://www.bilibili.com/bangumi/play/epxxxxx`
           },
           "id": 123, //番剧题目id,是数字,网址一般是https://www.bilibili.com/bangumi/media/mdxxxx
           "ssId": 456, //番剧id,网址一般是https://www.bilibili.com/bangumi/play/ssyyyyy
-          "title": "题目",
+          "title": "某一季的题目",
           "jpTitle": "",
           "series": "系列名",
           "alias": "",
