@@ -1,8 +1,5 @@
 import requests
-import os
-import re
 import time
-
 
 
 class Spider(object):

@@ -73,7 +73,7 @@ if __name__=='__main__':
     else:
         target = sys.argv[1]
     print('开始分析', target)
-    dm = Danmu()
+    dm = DanmuMaster()
     dm.from_url(target)
 ```
 
@@ -83,7 +83,7 @@ if __name__=='__main__':
 
 命令行玩家无视上面的第三个步骤, 启动方式如下:
 ```bash
-$ cd BilibiliHistoryDanmuDownloader/
+$ cd BiliDanmuToolkit/
 $ python FullDanmuGen.py 'https://www.bilibili.com/video/av314'
 ```
 

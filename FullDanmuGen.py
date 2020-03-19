@@ -15,7 +15,7 @@ from DanmuSpider import Spider
 <时间(秒),样式,字号,颜色,UNIX-time,弹幕池,用户,rowID>
 '''
 
-class Danmu(object):
+class DanmuMaster(object):
     def __init__(self):
         self.no = ''
         self.page = 0
@@ -41,6 +41,30 @@ class Danmu(object):
             self._get_info_av(url)
         else:
             self._get_info_ep(url)
+        self._all_danmu()
+
+    def init_from_av(self, av: str, p: str = '1', cookie_path: str = 'cookie.cfg'):
+        ptn_av = re.compile(r'av\d+')
+        ptn_p = re.compile(r'[1-9]\d*')
+        if ptn_av.fullmatch(av) is None:
+            print("av号格式错误. 例: 'av1234'")
+            exit(1)
+        if ptn_p.fullmatch(p) is None:
+            print("分p号格式错误,应为纯数字 例: '2'")
+            exit(1)
+        self.url = "https://www.bilibili.com/" + av
+        self.no, self.page, self.cookie_path = av, p, cookie_path
+        self._get_info_av(self.url)
+        self._all_danmu()
+
+    def init_from_ep(self, ep: str, cookie_path: str = 'cookie.cfg'):
+        ptn_ep = re.compile(r'(ss|ep)\d+')
+        if ptn_ep.fullmatch(ep) is None:
+            print("ep号格式有误, 例: 'ep1234'")
+            exit(1)
+        self.url = "https://www.bilibili.com/bangumi/play/" + ep
+        self._get_info_ep(self.url)
+        self.cookie_path = cookie_path
         self._all_danmu()
 
     def _all_danmu(self):
@@ -254,11 +278,11 @@ class Danmu(object):
 
 if __name__=='__main__':
     target = ''
-    if len(sys.argv)<2:
+    if len(sys.argv) < 2:
         target = 'https://www.bilibili.com/video/av314'  # 将你的网址粘贴在这里
     else:
         target = sys.argv[1]
     print('开始分析', target)
-    dm = Danmu()
+    dm = DanmuMaster()
     dm.from_url(target)
 
