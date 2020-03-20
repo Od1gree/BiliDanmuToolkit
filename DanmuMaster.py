@@ -87,7 +87,6 @@ class DanmuMaster(object):
         time.sleep(sec_wait - 10)
 
         # 循环监测视频是否可用
-        target_cid = "0"
         while True:
             time.sleep(interval_sec)
             url = "https://www.bilibili.com/bangumi/play/" + self.ssid
@@ -150,7 +149,13 @@ class DanmuMaster(object):
             amount = 0  # 统计本次返回的弹幕总数量, 若小于弹幕池限制则可以判定抓取完毕
             req_date_str = progress_date_str
             xml_str = self._get_history_danmu(req_date_str)
-            root = et.fromstring(xml_str)
+            root = None
+            # 如果cookie失效会在这里报错
+            try:
+                root = et.fromstring(xml_str)
+            except Exception as e:
+                print("返回的弹幕文件有误, 报错信息:", e, "\n返回的xml内容如下:", xml_str)
+                exit(1)
             earliest = self.timeProgress
             for danmu in root.findall('d'):
                 amount += 1
