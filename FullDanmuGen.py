@@ -30,18 +30,18 @@ class DanmuMaster(object):
         self.xmlRoot = None
         self.fileName = ''
         self.cookie_path = ''
+        self.ep_series = []
 
     def from_url(self, url: str, cookie_path: str = 'cookie.cfg'):
         self.url = url
         self.cookie_path = cookie_path
-        temp_lst = url.split('/')[-1]
+        temp_lst = url.split('/')
         if temp_lst[-1][0] == 'a':
-            av_info = temp_lst.split('?')
+            av_info = temp_lst[-1].split('?')
             self.no, self.page = av_info[0], av_info[1] if len(av_info) > 1 else 1
             self._get_info_av(url)
         else:
             self._get_info_ep(url)
-        self._all_danmu()
 
     def init_from_av(self, av: str, p: str = '1', cookie_path: str = 'cookie.cfg'):
         ptn_av = re.compile(r'av\d+')
@@ -55,7 +55,6 @@ class DanmuMaster(object):
         self.url = "https://www.bilibili.com/" + av
         self.no, self.page, self.cookie_path = av, p, cookie_path
         self._get_info_av(self.url)
-        self._all_danmu()
 
     def init_from_ep(self, ep: str, cookie_path: str = 'cookie.cfg'):
         ptn_ep = re.compile(r'(ss|ep)\d+')
@@ -65,9 +64,52 @@ class DanmuMaster(object):
         self.url = "https://www.bilibili.com/bangumi/play/" + ep
         self._get_info_ep(self.url)
         self.cookie_path = cookie_path
-        self._all_danmu()
 
-    def _all_danmu(self):
+    def listen_ss(self, p: str, time_str: str, interval_sec: int = 60):
+        """
+        不断获取最新弹幕
+        :param p: 视频分p,即集数
+        :param time_str: 视频更新时间,格式为 "yyyy-mm-ddThh:mm",例如 "2020-01-02T03:04"
+        :param interval_sec: 每次获取间隔
+        :return:
+        """
+        input_time = None
+        try:
+            input_time = datetime.fromisoformat(time_str)
+        except Exception as e:
+            print("输入的时间字符串有问题:", e)
+            exit(1)
+        target_time = datetime(input_time.year, input_time.month, input_time.day,
+                               hour=input_time.hour, minute=input_time.minute,
+                               tzinfo=timezone(timedelta(hours=8)))
+        sec_wait = max(11, int(target_time.timestamp()) - int(time.time()))
+        print("wait:", sec_wait, "seconds")
+        time.sleep(sec_wait - 10)
+
+        # 循环监测视频是否可用
+        target_cid = "0"
+        while True:
+            time.sleep(interval_sec)
+            url = "https://www.bilibili.com/bangumi/play/" + self.ssid
+            response = Spider.get_html(url)
+            ep_json = self._get_epinfo_in_html(response)
+            new_series = ep_json['epList']
+            if len(new_series) >= int(p)-1:
+                print("符合条件开始获取")
+                time.sleep(5)
+                target_ep = new_series[int(p)-1]["id"]
+                new_url = "https://www.bilibili.com/bangumi/play/ep" + str(target_ep)
+                self._get_info_ep(new_url)
+                break
+
+        while True:
+            time.sleep(interval_sec)
+            content_bytes = Spider.get_current_danmu(self.cid, self.url)
+            print("获取了弹幕")
+            with open(self.fileName + '_latest_' + str(int(time.time())) + '_.xml', 'wb') as f:
+                f.write(content_bytes)
+
+    def all_danmu(self):
         # get cid, time, title
         overall = 0
         self._get_current_danmu()
@@ -246,19 +288,12 @@ class DanmuMaster(object):
         self.fileName = folder + self.no + '_' + self.title + '_p' + str(self.page)
 
     # 番剧没有视频发布时间,需要通过获取 历史弹幕月 来确定历史弹幕停止时间
-    def _get_info_ep(self, url: str):
+    def _get_info_ep(self, url: str,):
         html = Spider.get_html(url)
-        soup = BeautifulSoup(html, features="html.parser")
-        tag_list = soup.find_all("script")
-        ep_json_str = None
-        for item in tag_list:
-            if r"__INITIAL_STATE__" in item.text:
-                index_start = item.text.find('=')
-                index_end = item.text.find(';')
-                ep_json_str = item.text[index_start+1:index_end]
-                break
-        ep_json = json.loads(ep_json_str)
+
+        ep_json = self._get_epinfo_in_html(html)
         bangumi = ep_json['epInfo']
+        self.ep_series = ep_json['epList']
 
         # url后缀为ss番号时, epInfo为空,需要去列表里面找第一项(网页端自动显示第一项)
         if ep_json['epInfo']['loaded'] is False:
@@ -275,14 +310,28 @@ class DanmuMaster(object):
             os.mkdir(folder)
         self.fileName = folder + self.no + '_' + self.title + '_p' + self.page
 
+    def _get_epinfo_in_html(self, html):
+        soup = BeautifulSoup(html, features="html.parser")
+        tag_list = soup.find_all("script")
+        ep_json_str = None
+        for item in tag_list:
+            if r"__INITIAL_STATE__" in item.text:
+                index_start = item.text.find('=')
+                index_end = item.text.find(';')
+                ep_json_str = item.text[index_start + 1:index_end]
+                break
+        ep_json = json.loads(ep_json_str)
+        return ep_json
+
 
 if __name__=='__main__':
     target = ''
     if len(sys.argv) < 2:
-        target = 'https://www.bilibili.com/video/av314'  # 将你的网址粘贴在这里
+        target = 'https://www.bilibili.com/video/av10429'  # 将你的网址粘贴在这里
     else:
         target = sys.argv[1]
     print('开始分析', target)
     dm = DanmuMaster()
     dm.from_url(target)
+    dm.all_danmu()
 
