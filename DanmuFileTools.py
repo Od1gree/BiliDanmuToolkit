@@ -175,10 +175,12 @@ class DanmuCombinator(object):
     @staticmethod
     def _xor(dic1: dict, dic2: dict):
         common = {}
-        for item in dic1:
-            if item in dic2:
+        d1 = dic1.copy()
+        d2 = dic2.copy()
+        for item in d1:
+            if item in d2:
                 dic2.pop(item)
+                common[item] = d1[item]
                 dic1.pop(item)
-                common[item] = dic1[item]
 
         return dic1, dic2, common
