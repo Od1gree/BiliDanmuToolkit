@@ -120,7 +120,7 @@ class DanmuMaster(object):
                 if ratio < 0.3:
                     interval_sec = interval_sec * 1.5
                     print("时间间隔修改为:", interval_sec)
-                previous_danmu = danmu
+            previous_danmu = danmu
             time.sleep(int(interval_sec))
 
     def all_danmu(self):
