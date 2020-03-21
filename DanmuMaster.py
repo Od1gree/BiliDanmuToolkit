@@ -109,8 +109,8 @@ class DanmuMaster(object):
             print("获取了弹幕")
             with open(self.fileName + '_latest_' + str(int(time.time())) + '_.xml', 'wb') as f:
                 f.write(content_bytes)
+            danmu = DanmuFile.from_str(content_bytes.decode('utf-8'))
             if previous_danmu is not None:
-                danmu = DanmuFile.from_str(content_bytes.decode('utf-8'))
                 _, inc, _ = DanmuCombinator.diff(previous_danmu, danmu)
                 ratio = inc / danmu.max_limit
                 print("时间比例:", ratio)
