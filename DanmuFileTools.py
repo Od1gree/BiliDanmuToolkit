@@ -26,6 +26,8 @@ class Danmu(object):
         return text
 
 
+
+
 class DanmuFile(object):
     def __init__(self, root: et.Element = None, summary: bool = False):
         try:
@@ -44,19 +46,22 @@ class DanmuFile(object):
         self.state: str = self.xml_root.find('state').text
         self.real_name: str = self.xml_root.find('real_name').text
 
-        self.danmu_dict = {}
+        self._danmu_dict = {}
         self.count = 0
         self.style = {str(i): 0 for i in range(1, 9)}  # 1-3滚动, 4底端, 5顶端, 6逆向, 7定位, 8高级
         self.pool = {str(i): 0 for i in range(0, 3)}  # 0普通, 1字幕, 2高级
 
         for item in self.xml_root.findall('d'):
             danmu: Danmu = Danmu(item.text, item.attrib['p'])
-            self.danmu_dict[danmu.rowid] = danmu
+            self._danmu_dict[danmu.rowid] = danmu
             self.count += 1
             self.style[danmu.style] += 1
             self.pool[danmu.pooltype] += 1
         if summary:
             self.summary()
+
+    def get_dic(self):
+        return self._danmu_dict.copy()
 
     @staticmethod
     def from_file(path: str = None, summary: bool = False):
@@ -98,8 +103,8 @@ class DanmuFile(object):
                u'</state><real_name>' + self.real_name + \
                u'</real_name>'
         body = ""
-        for item in self.danmu_dict:
-            body += self.danmu_dict[item].to_str()
+        for item in self._danmu_dict:
+            body += self._danmu_dict[item].to_str()
         tail = "</i>"
         return head + body + tail
 
@@ -114,8 +119,8 @@ class DanmuFile(object):
         check_level = 5
         if check_type is 'all':
             check_level = 8
-        for item in self.danmu_dict:
-            danmu = self.danmu_dict[item]
+        for item in self._danmu_dict:
+            danmu = self._danmu_dict[item]
             danmu_time = int(danmu.unix_time)
             danmu_style = int(danmu.style)
             if danmu_style <= check_level:
@@ -156,7 +161,7 @@ class DanmuCombinator(object):
 
     @staticmethod
     def diff(dm1: DanmuFile, dm2: DanmuFile):
-        dic1, dic2, common = DanmuCombinator._xor(dm1.danmu_dict, dm2.danmu_dict)
+        dic1, dic2, common = DanmuCombinator._xor(dm1.get_dic(), dm2.get_dic())
         len1 = len(dic1)
         len2 = len(dic2)
         len_common = len(common)
@@ -177,10 +182,10 @@ class DanmuCombinator(object):
         common = {}
         d1 = dic1.copy()
         d2 = dic2.copy()
-        for item in d1:
-            if item in d2:
-                dic2.pop(item)
+        for item in dic1:
+            if item in dic2:
+                d2.pop(item)
                 common[item] = d1[item]
-                dic1.pop(item)
+                d1.pop(item)
 
-        return dic1, dic2, common
+        return d1, d2, common

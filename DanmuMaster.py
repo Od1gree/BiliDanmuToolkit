@@ -112,8 +112,8 @@ class DanmuMaster(object):
             danmu = DanmuFile.from_str(content_bytes.decode('utf-8'))
             if previous_danmu is not None:
                 _, inc, _ = DanmuCombinator.diff(previous_danmu, danmu)
-                ratio = inc / danmu.max_limit
-                print("时间比例:", ratio)
+                ratio = inc / int(danmu.max_limit)
+                print("时间比例:", ratio, )
                 if ratio > 0.5:
                     interval_sec = interval_sec / 1.5
                     print("时间间隔修改为:", interval_sec)
