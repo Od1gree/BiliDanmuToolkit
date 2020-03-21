@@ -9,27 +9,29 @@ import sys
 from bs4 import BeautifulSoup
 
 from DanmuSpider import Spider
+from DanmuFileTools import *
 
 '''
 弹幕格式如下
 <时间(秒),样式,字号,颜色,UNIX-time,弹幕池,用户,rowID>
 '''
 
+
 class DanmuMaster(object):
     def __init__(self):
-        self.no = ''
-        self.page = 0
-        self.url = ''
-        self.cid = "0"
-        self.ssid = "ss0"
-        self.title = ''
+        self.no: str = ''
+        self.page: int = 0
+        self.url: str = ''
+        self.cid: str = "0"
+        self.ssid: str = "ss0"
+        self.title: str = ''
         self.timeUnix = 0
         self.timeProgress = 0
         self.danmuSet = []
         self.xmlObj = None
         self.xmlRoot = None
-        self.fileName = ''
-        self.cookie_path = ''
+        self.fileName: str = ''
+        self.cookie_path: str = ''
         self.ep_series = []
 
     def from_url(self, url: str, cookie_path: str = 'cookie.cfg'):
@@ -88,7 +90,6 @@ class DanmuMaster(object):
 
         # 循环监测视频是否可用
         while True:
-            time.sleep(interval_sec)
             url = "https://www.bilibili.com/bangumi/play/" + self.ssid
             response = Spider.get_html(url)
             ep_json = self._get_epinfo_in_html(response)
@@ -100,13 +101,27 @@ class DanmuMaster(object):
                 new_url = "https://www.bilibili.com/bangumi/play/ep" + str(target_ep)
                 self._get_info_ep(new_url)
                 break
-
-        while True:
             time.sleep(interval_sec)
+
+        previous_danmu = None
+        while True:
             content_bytes = Spider.get_current_danmu(self.cid, self.url)
             print("获取了弹幕")
             with open(self.fileName + '_latest_' + str(int(time.time())) + '_.xml', 'wb') as f:
                 f.write(content_bytes)
+            if previous_danmu is not None:
+                danmu = DanmuFile.from_str(content_bytes.decode('utf-8'))
+                _, inc, _ = DanmuCombinator.diff(previous_danmu, danmu)
+                ratio = inc / danmu.max_limit
+                print("时间比例:", ratio)
+                if ratio > 0.5:
+                    interval_sec = interval_sec / 1.5
+                    print("时间间隔修改为:", interval_sec)
+                if ratio < 0.3:
+                    interval_sec = interval_sec * 1.5
+                    print("时间间隔修改为:", interval_sec)
+                previous_danmu = danmu
+            time.sleep(int(interval_sec))
 
     def all_danmu(self):
         # get cid, time, title
@@ -149,13 +164,9 @@ class DanmuMaster(object):
             amount = 0  # 统计本次返回的弹幕总数量, 若小于弹幕池限制则可以判定抓取完毕
             req_date_str = progress_date_str
             xml_str = self._get_history_danmu(req_date_str)
-            root = None
+            root = DanmuFile.from_str(xml_str).xml_root
             # 如果cookie失效会在这里报错
-            try:
-                root = et.fromstring(xml_str)
-            except Exception as e:
-                print("返回的弹幕文件有误, 报错信息:", e, "\n返回的xml内容如下:", xml_str)
-                exit(1)
+
             earliest = self.timeProgress
             for danmu in root.findall('d'):
                 amount += 1
