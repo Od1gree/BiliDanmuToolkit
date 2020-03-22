@@ -18,6 +18,9 @@ from DanmuFileTools import *
 
 
 class DanmuMaster(object):
+    """
+    用于控制弹幕获取的类, 包括历史弹幕和最新弹幕.
+    """
     def __init__(self):
         self.no: str = ''
         self.page: int = 0
@@ -34,7 +37,13 @@ class DanmuMaster(object):
         self.cookie_path: str = ''
         self.ep_series = []
 
-    def from_url(self, url: str, cookie_path: str = 'cookie.cfg'):
+    def init_from_url(self, url: str, cookie_path: str = 'cookie.cfg'):
+        """
+        使用url初始化分析类
+        :param url: 后缀为 "av/ep/ss" + "数字" 的url
+        :param cookie_path: 本地保存cookie的目录
+        :return: None
+        """
         self.url = url
         self.cookie_path = cookie_path
         temp_lst = url.split('/')
@@ -46,6 +55,13 @@ class DanmuMaster(object):
             self._get_info_ep(url)
 
     def init_from_av(self, av: str, p: str = '1', cookie_path: str = 'cookie.cfg'):
+        """
+        使用av号初始化类
+        :param av: av号, 形如 "av314"
+        :param p: 分p视频的p号, 默认为1
+        :param cookie_path: 本地保存cookie的目录
+        :return: None
+        """
         ptn_av = re.compile(r'av\d+')
         ptn_p = re.compile(r'[1-9]\d*')
         if ptn_av.fullmatch(av) is None:
@@ -59,6 +75,12 @@ class DanmuMaster(object):
         self._get_info_av(self.url)
 
     def init_from_ep(self, ep: str, cookie_path: str = 'cookie.cfg'):
+        """
+        使用ep号或ss号初始化类
+        :param ep: ep或ss号 形如 "ep123"或"ss123"
+        :param cookie_path: 本地保存cookie的目录
+        :return: None
+        """
         ptn_ep = re.compile(r'(ss|ep)\d+')
         if ptn_ep.fullmatch(ep) is None:
             print("ep号格式有误, 例: 'ep1234'")
@@ -69,13 +91,21 @@ class DanmuMaster(object):
 
     def listen_ss(self, p: str, time_str: str, interval_sec: int = 60):
         """
-        不断获取最新弹幕
-        :param p: 视频分p,即集数
+        预定时间来滚动获取新番的最新弹幕.
+        在初始化时使用同一季的任意一集的url即可.
+        如果是已经发布的集数, time_str填写当前时间即可.
+        填写时间的目的是为了减少不必要的检查"目标集数是否可用"的次数, 减少被ban的概率.
+        对于未来的集数, 脚本会在到时间之后启动, 即使番剧推迟几分钟公开也不会报错.
+
+        在检测到相应的剧集可以观看时开始获取弹幕.
+        通过计算相邻两次获取的弹幕增量, 动态调整获取弹幕的时间间隔.
+        :param p: 视频分p,即集数,未发布也可(只要在初始化时是处于同一个系列的就可以"
         :param time_str: 视频更新时间,格式为 "yyyy-mm-ddThh:mm",例如 "2020-01-02T03:04"
-        :param interval_sec: 每次获取间隔
+        :param interval_sec: 每次获取间隔的初始时间, 时间 > 10秒
         :return:
         """
         input_time = None
+        interval_sec = max(interval_sec, 11)
         try:
             input_time = datetime.fromisoformat(time_str)
         except Exception as e:
@@ -109,21 +139,25 @@ class DanmuMaster(object):
             print("获取了弹幕")
             with open(self.fileName + '_latest_' + str(int(time.time())) + '_.xml', 'wb') as f:
                 f.write(content_bytes)
-            danmu = DanmuFile.from_str(content_bytes.decode('utf-8'))
+            danmu = DanmuFile.init_from_str(content_bytes.decode('utf-8'))
             if previous_danmu is not None:
                 _, inc, _ = DanmuCombinator.diff(previous_danmu, danmu)
-                ratio = inc / int(danmu.max_limit)
+                ratio = len(inc) / int(danmu.max_limit)
                 print("时间比例:", ratio, )
                 if ratio > 0.5:
-                    interval_sec = interval_sec / 1.5
+                    interval_sec = int(interval_sec / 1.5)
                     print("时间间隔修改为:", interval_sec)
                 if ratio < 0.3:
-                    interval_sec = interval_sec * 1.5
+                    interval_sec += min(int(interval_sec * 0.5), 900)
                     print("时间间隔修改为:", interval_sec)
             previous_danmu = danmu
             time.sleep(int(interval_sec))
 
     def all_danmu(self):
+        """
+        获取当前弹幕和历史弹幕
+        :return:
+        """
         # get cid, time, title
         overall = 0
         self._get_current_danmu()
@@ -135,7 +169,6 @@ class DanmuMaster(object):
         except Exception as e:
             print("读取本地弹幕文件失败, 信息如下\n", e)
         self.xmlRoot = self.xmlObj.getroot()
-
 
         for danmu in self.xmlRoot.findall('d'):
             danmu_info = danmu.attrib['p'].split(',')
@@ -164,7 +197,7 @@ class DanmuMaster(object):
             amount = 0  # 统计本次返回的弹幕总数量, 若小于弹幕池限制则可以判定抓取完毕
             req_date_str = progress_date_str
             xml_str = self._get_history_danmu(req_date_str)
-            root = DanmuFile.from_str(xml_str).xml_root
+            root = DanmuFile.init_from_str(xml_str).xml_root
             # 如果cookie失效会在这里报错
 
             earliest = self.timeProgress
@@ -212,7 +245,7 @@ class DanmuMaster(object):
             self.timeProgress = self._write_record(datetime.timestamp(progress_time_bj))
 
             # 获取到的弹幕数量小于弹幕池上限说明到头了
-            if amount < int(root.find('maxlimit').text) and amount > 0:
+            if int(root.find('maxlimit').text) > amount > 0:
                 print("弹幕数", amount, "少于上限且不为零, 可结束获取.")
                 break
 
@@ -348,6 +381,6 @@ if __name__=='__main__':
         target = sys.argv[1]
     print('开始分析', target)
     dm = DanmuMaster()
-    dm.from_url(target)
+    dm.init_from_url(target)
     dm.all_danmu()
 

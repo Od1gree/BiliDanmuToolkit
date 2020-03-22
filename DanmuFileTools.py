@@ -4,7 +4,18 @@ import time
 
 # 弹幕格式[0 时间(秒),1 样式,字号,2 颜色,3 UNIX-time,4 弹幕池,5 用户,6 rowID, 7 弹幕内容]
 class Danmu(object):
+    """
+    Danmu类存储了弹幕的基本信息, xml格式的弹幕信息排列方式如下
+    <d p="0 时间(秒),1 样式,字号,2 颜色,3 UNIX-time,4 弹幕池,5 用户,6 rowID"> 7 弹幕内容</d>
+    """
     def __init__(self, text: str, info: str):
+        """
+        使用xml格式字符串初始化Danmu类.
+
+        形如 '<d p="...">弹幕text</d>'
+        :param text: 弹幕内容
+        :param info: 弹幕附属信息,也就是p的内容
+        """
         self.text = text
         try:
             [self.index, self.style, self.fontsize, self.color,
@@ -13,6 +24,10 @@ class Danmu(object):
             print('error reading information of danmu:', e)
 
     def to_str(self):
+        """
+        输出为xml格式的弹幕字符串
+        :return: 字符串
+        """
         text = '<d p="' \
                + self.index + ',' \
                + self.style + ',' \
@@ -30,15 +45,19 @@ class Danmu(object):
 
 class DanmuFile(object):
     def __init__(self, root: et.Element = None, summary: bool = False):
+        """
+        使用python内置的etree.ElementTree.Element来初始化, 一般不作为外部调用使用
+        :param root:
+        :param summary: 打印统计信息
+        """
         try:
             assert root
         except AssertionError:
-            print("elementTree对象根节点为None")
+            print("elementTree对象根节点为None, 请使用 init_from_file() 或 init_from_str()方法初始化")
             exit(1)
         self.xml_root: et.Element = root
-        head_info = []
-        for item in self.xml_root:
-            head_info.append(item.text)
+
+        # 弹幕文件头部信息, 不读取<source>标签是因为有的文件没有.
         self.chat_server: str = self.xml_root.find('chatserver').text
         self.chat_id: str = self.xml_root.find('chatid').text
         self.mission: str = self.xml_root.find('mission').text
@@ -46,9 +65,13 @@ class DanmuFile(object):
         self.state: str = self.xml_root.find('state').text
         self.real_name: str = self.xml_root.find('real_name').text
 
+        # 字典形势存储的弹幕, K: rowID, V: Danmu类
         self._danmu_dict = {}
+        # 弹幕总数
         self.count = 0
+        # 弹幕位置统计
         self.style = {str(i): 0 for i in range(1, 9)}  # 1-3滚动, 4底端, 5顶端, 6逆向, 7定位, 8高级
+        # 弹幕池分类统计
         self.pool = {str(i): 0 for i in range(0, 3)}  # 0普通, 1字幕, 2高级
 
         for item in self.xml_root.findall('d'):
@@ -64,7 +87,13 @@ class DanmuFile(object):
         return self._danmu_dict.copy()
 
     @staticmethod
-    def from_file(path: str = None, summary: bool = False):
+    def init_from_file(path: str = None, summary: bool = False):
+        """
+        从xml文件生成DanmuFile类.
+        :param path: 路径
+        :param summary: 是否打印统计信息
+        :return: DanmuFile类
+        """
         xml_obj = None
         try:
             xml_file = open(path, 'rt', encoding='utf-8')
@@ -77,7 +106,7 @@ class DanmuFile(object):
         return DanmuFile(root=xml_root, summary=summary)
 
     @staticmethod
-    def from_str(xml_str: str, summary: bool = False):
+    def init_from_str(xml_str: str, summary: bool = False):
         """
         从xml格式的字符串生成DanmuFile类.
         注意str需要为unicode.
@@ -132,8 +161,18 @@ class DanmuFile(object):
         return earliest, latest
 
     def export(self, path: str):
-        f = open(path, "w")
-        f.write(self.to_str())
+        """
+        输出为xml文件, 不检查文件存在, 直接写覆盖.
+        :param path: 文件路径
+        :return: 文件写入是否成功
+        """
+        try:
+            f = open(path, "w")
+            f.write(self.to_str())
+        except Exception as e:
+            print("写入xml文件错误", e)
+            return False
+        return True
 
     def summary(self):
         print("弹幕池最大容量", self.max_limit)
@@ -160,25 +199,31 @@ class DanmuFile(object):
 class DanmuCombinator(object):
 
     @staticmethod
-    def diff(dm1: DanmuFile, dm2: DanmuFile):
+    def diff(dm1: DanmuFile, dm2: DanmuFile) -> (dict, dict, dict):
+        """
+        比较两个弹幕文件的相同和不同
+        :param dm1: DanmuFile类
+        :param dm2: DanmuFile类
+        :return: (文件1独有, 文件2独有, 共有)
+        """
         dic1, dic2, common = DanmuCombinator._xor(dm1.get_dic(), dm2.get_dic())
         len1 = len(dic1)
         len2 = len(dic2)
         len_common = len(common)
-        print("文件1独有", len1)
-        print("文件2独有", len2)
+        print("文件1独有", len1, )
+        print("文件2独有", len2, )
         print("二者共有", len_common)
-        return len1, len2, len_common
+        return dic1, dic2, common
 
     @staticmethod
-    def combine(dm1: dict, dm2: dict, force: bool = False):
+    def combine(dm1: dict, dm2: dict, force: bool = False) -> dict:
         comb = {}
         comb.update(dm1)
         comb.update(dm2)
         return comb
 
     @staticmethod
-    def _xor(dic1: dict, dic2: dict):
+    def _xor(dic1: dict, dic2: dict) -> (dict, dict, dict):
         common = {}
         d1 = dic1.copy()
         d2 = dic2.copy()
