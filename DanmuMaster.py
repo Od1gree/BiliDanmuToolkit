@@ -40,14 +40,14 @@ class DanmuMaster(object):
     def init_from_url(self, url: str, cookie_path: str = 'cookie.cfg'):
         """
         使用url初始化分析类
-        :param url: 后缀为 "av/ep/ss" + "数字" 的url
+        :param url: 后缀为 "av/bv/ep/ss" + "数字" 的url
         :param cookie_path: 本地保存cookie的目录
         :return: None
         """
         self.url = url
         self.cookie_path = cookie_path
         temp_lst = url.split('/')
-        if temp_lst[-1][0] == 'a':
+        if temp_lst[-1][0] in 'aAbB':
             av_info = temp_lst[-1].split('?')
             self.no, self.page = av_info[0], av_info[1] if len(av_info) > 1 else 1
             self._get_info_av(url)
@@ -56,13 +56,13 @@ class DanmuMaster(object):
 
     def init_from_av(self, av: str, p: str = '1', cookie_path: str = 'cookie.cfg'):
         """
-        使用av号初始化类
-        :param av: av号, 形如 "av314"
+        使用av号或bv号初始化类
+        :param av: av号, 形如 "av314"; bv号, 形如 "BV1aaa411ee1"
         :param p: 分p视频的p号, 默认为1
         :param cookie_path: 本地保存cookie的目录
         :return: None
         """
-        ptn_av = re.compile(r'av\d+')
+        ptn_av = re.compile(r'(((av)|(AV))\d+)|(((bv)|(BV))[A-Za-z0-9]+)')
         ptn_p = re.compile(r'[1-9]\d*')
         if ptn_av.fullmatch(av) is None:
             print("av号格式错误. 例: 'av1234'")
@@ -81,7 +81,7 @@ class DanmuMaster(object):
         :param cookie_path: 本地保存cookie的目录
         :return: None
         """
-        ptn_ep = re.compile(r'(ss|ep)\d+')
+        ptn_ep = re.compile(r'(ss|ep)\d+', re.IGNORECASE)
         if ptn_ep.fullmatch(ep) is None:
             print("ep号格式有误, 例: 'ep1234'")
             exit(1)
