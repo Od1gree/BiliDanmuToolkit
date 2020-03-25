@@ -124,7 +124,7 @@ class DanmuMaster(object):
             response = Spider.get_html(url)
             ep_json = self._get_epinfo_in_html(response)
             new_series = ep_json['epList']
-            if len(new_series) >= int(p)-1:
+            if len(new_series) > int(p):
                 print("符合条件开始获取")
                 time.sleep(5)
                 target_ep = new_series[int(p)-1]["id"]
