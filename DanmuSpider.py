@@ -115,6 +115,32 @@ class Spider(object):
             print("请求月份弹幕信息失败\n", e)
 
     @staticmethod
+    def get_bangumi_timeline():
+        req = 'https://bangumi.bilibili.com/web_api/timeline_global'
+        print('request bangumi timeline')
+        header = {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Connection': 'keep-alive',
+            'Host': 'www.bilibili.com',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36'
+        }
+
+        response = None
+        try:
+            response = requests.get(url=req, headers=header)
+            return response.content
+        except Exception as e:
+            if response is not None:
+                print("状态码:", response.status_code)
+            print("请求新番列表失败\n", e)
+
+    @staticmethod
     def _history_request(ref: str, req_url: str, cookie_path: str):
         cookie = ''
         try:
@@ -141,7 +167,7 @@ class Spider(object):
         response = None
         try:
             response = requests.get(req_url, headers=header)
-            return response
+            return response.content
         except Exception as e:
             if response is not None:
                 print("状态码:", response.status_code)

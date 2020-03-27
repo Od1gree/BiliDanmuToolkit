@@ -145,10 +145,10 @@ class DanmuMaster(object):
                 ratio = len(inc) / int(danmu.max_limit)
                 print("时间比例:", ratio, )
                 if ratio > 0.5:
-                    interval_sec = int(interval_sec / 1.5)
+                    interval_sec = int(interval_sec / 5)
                     print("时间间隔修改为:", interval_sec)
                 if ratio < 0.3:
-                    interval_sec += min(int(interval_sec * 0.5), 900)
+                    interval_sec = min(int(interval_sec * 1.5), 1800)
                     print("时间间隔修改为:", interval_sec)
             previous_danmu = danmu
             time.sleep(int(interval_sec))
@@ -347,7 +347,7 @@ class DanmuMaster(object):
         # url后缀为ss番号时, epInfo为空,需要去列表里面找第一项(网页端自动显示第一项)
         if ep_json['epInfo']['loaded'] is False:
             bangumi = ep_json['epList'][0]
-        print(ep_json)
+        # print(ep_json)
         self.cid = str(bangumi['cid'])
         self.no = 'ep' + str(bangumi['id'])
         self.title = ep_json['h1Title']

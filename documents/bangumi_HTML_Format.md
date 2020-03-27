@@ -1,9 +1,9 @@
-###番剧网页
+### 1.番剧网页
 番剧网页包括动漫番剧以及电影.
 
 url为 `https://www.bilibili.com/bangumi/play/epxxxxx`
 
-####网页格式
+#### 网页格式
 没用的用省略号代替,只写有用的
 
 ```html
@@ -111,3 +111,48 @@ url为 `https://www.bilibili.com/bangumi/play/epxxxxx`
           }]
 ...
 ```
+### 2. 新番时间表
+新番时间表请求url为`https://bangumi.bilibili.com/web_api/timeline_global`
+
+返回json格式的信息,包含当前周到下周共14天的番剧详情.
+
+```json
+{
+    "code": 0,
+    "message": "success",
+    "result": [{
+        "date": "3-21",
+        "date_ts": 1584720000,
+        "day_of_week": 6,
+        "is_today": 0,
+        "seasons": [{
+            "cover": "http://i0.hdslb.com/bfs/bangumi/image/94552aaa95b2785df3dbbbad2bb664d53d38a58f.png",
+            "delay": 0,
+            "ep_id": 307254,
+            "favorites": 1543235,
+            "follow": 0,
+            "is_published": 1,
+            "pub_index": "第8话",
+            "pub_time": "00:05",
+            "pub_ts": 1584720300,
+            "season_id": 29325,
+            "season_status": 13,
+            "square_cover": "http://i0.hdslb.com/bfs/bangumi/image/d6b96118a865be0a88eb69f4ee7c455c82d4276e.jpg",
+            "title": "某科学的超电磁炮T",
+            "url": "https://www.bilibili.com/bangumi/play/ss29325"
+        },
+        {
+            "cover": "下面略"
+        }]
+    },
+    {
+        "date": "4-2",
+        "date_ts": 1584806400,
+        "day_of_week": 7,
+        "is_today": 0,
+        "sessions": "后面就不写了......"
+    }]
+}
+```
+
+* 注意日期首位没有零.
