@@ -124,20 +124,22 @@ class DanmuMaster(object):
             response = Spider.get_html(url)
             ep_json = self._get_epinfo_in_html(response)
             new_series = ep_json['epList']
-            if len(new_series) > int(p):
+            if len(new_series) >= int(p):
                 print("符合条件开始获取")
                 time.sleep(5)
                 target_ep = new_series[int(p)-1]["id"]
                 new_url = "https://www.bilibili.com/bangumi/play/ep" + str(target_ep)
                 self._get_info_ep(new_url)
                 break
+            print("未找到相应剧集,等待", interval_sec, "秒")
             time.sleep(interval_sec)
 
         previous_danmu = None
         while True:
             content_bytes = Spider.get_current_danmu(self.cid, self.url)
-            print("获取了弹幕")
-            with open(self.fileName + '_latest_' + str(int(time.time())) + '_.xml', 'wb') as f:
+            now = datetime.fromtimestamp(time.time(), timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S')
+            print(now, "获取了弹幕")
+            with open(self.fileName + '_latest_' + str(int(time.time())) + '.xml', 'wb') as f:
                 f.write(content_bytes)
             danmu = DanmuFile.init_from_str(content_bytes.decode('utf-8'))
             if previous_danmu is not None:
