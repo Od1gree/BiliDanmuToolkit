@@ -116,6 +116,7 @@ class Spider(object):
 
     @staticmethod
     def get_bangumi_timeline():
+        time.sleep(5)
         req = 'https://bangumi.bilibili.com/web_api/timeline_global'
         print('request bangumi timeline')
         header = {
