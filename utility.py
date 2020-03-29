@@ -1,3 +1,6 @@
+from DanmuMaster import DanmuMaster
+
+
 class TaskNode(object):
     def __init__(self, data, utime: int, priority=1, node_type: int = 0):
         self.next = None
@@ -43,3 +46,15 @@ class TaskQueue(object):
             node.next = current_node.next
             current_node.next = node
 
+
+class Converter(object):
+    @staticmethod
+    def ep_to_ss(ep_str: str):
+        """
+        ep号转ss号
+        :param ep_str: epxxxx的字符串
+        :return: ssyyyy的字符串
+        """
+        dm = DanmuMaster()
+        dm.init_from_ep(ep_str)
+        return dm.ssid

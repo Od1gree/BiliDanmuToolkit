@@ -15,7 +15,7 @@ class Listener(object):
     TYPE_REFRESH = 2
     TYPE_GETLIST = 3
 
-    def __init__(self, default_delay: int = 30, max_delay: int = 1800):
+    def __init__(self, default_delay: int = 30, max_delay: int = 5400):
         self._bangumi_map: dict = {}  # K为番剧ssid, v为已经纳入队列的列表
         self._next_update: dict = {}
         self._cookie_path: str = ''
@@ -52,9 +52,7 @@ class Listener(object):
                 bangumi_list.append(task)
             self._bangumi_map[ss_id] = bangumi_list
 
-        json_str = Spider.get_bangumi_timeline().decode('utf-8')
-        bangumi_json = json.loads(json_str)
-        self._resolve_json(bangumi_json)
+        self._exec_getlist_task()
 
     def start(self):
         while True:
@@ -73,7 +71,6 @@ class Listener(object):
                 current_task = self._exec_refresh_task(current_task)
             self._queue.return_task(current_task)
 
-
     def _exec_bangumi_task(self, task: TaskNode):
         bangumi:DanmuMaster = task.content
         prev_time = bangumi.timeProgress
@@ -90,10 +87,10 @@ class Listener(object):
         task.utime = int(time.time()) + self._default_delay
         return task
 
-    def _exec_getlist_task(self, task: TaskNode):
-        json_str = Spider.get_bangumi_timeline().decode('utf-8')
-        bangumi_json = json.loads(json_str)
-        self._resolve_json(bangumi_json)
+    def _exec_getlist_task(self):
+        for timeline in ['timeline_global', 'timeline_cn']:
+            bangumi_json = json.loads(Spider.get_bangumi_timeline(timeline).decode('utf-8'))
+            self._resolve_json(bangumi_json)
 
     def _calc_delay_sec(self, prev_time: int, ratio: float):
         current_time = int(time.time())
@@ -101,6 +98,12 @@ class Listener(object):
             return current_time + self._default_delay
         time_delta = current_time - prev_time
 
+        # 避免因清晨到早上弹幕量暴涨而遗漏
+        current_hour = self._utime_to_hour()
+        if 1 < current_hour < 7:
+            ratio *= (1 + current_hour*0.3)
+
+        # 弹幕比例0.2时时间不变
         if ratio > 0.9:
             calc_delta = min(time_delta * 0.1, self._default_delay)
         elif 0.6 < ratio <= 0.9:
@@ -112,7 +115,7 @@ class Listener(object):
         else:
             calc_delta = time_delta * 3 * (1-ratio*6)
 
-        print(calc_delta,"秒之后再次获取")
+        print(calc_delta, "秒之后再次获取")
         return current_time + int(calc_delta)
 
     def _resolve_json(self, bangumi_json: dict):
@@ -172,3 +175,13 @@ class Listener(object):
         """
         dt = datetime.fromtimestamp(unix_time, timezone(timedelta(hours=8)))
         return str(dt.month) + '-' + str(dt.day)
+
+    @staticmethod
+    def _utime_to_hour(unix_time: int = time.time()) -> int:
+        """
+        获得unix时间的小时数字.
+        :param unix_time: int型unix时间戳, 按秒计.
+        :return: unix时间所在的小时数字.
+        """
+
+

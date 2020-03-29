@@ -115,9 +115,9 @@ class Spider(object):
             print("请求月份弹幕信息失败\n", e)
 
     @staticmethod
-    def get_bangumi_timeline():
+    def get_bangumi_timeline(timeline_type: str):
         time.sleep(5)
-        req = 'https://bangumi.bilibili.com/web_api/timeline_global'
+        req = 'https://bangumi.bilibili.com/web_api/' + timeline_type
         print('request bangumi timeline')
         header = {
             'Accept': 'application/json, text/plain, */*',
