@@ -161,10 +161,14 @@ class Listener(object):
         for line in content:
             if line[0] is '#':
                 continue
+
             result = pattern.match(line)
+            if result is None:
+                continue
             ss_id = result.group(1)
             priority = int(result.group(2))
             self._priority_dict[ss_id] = priority
+
 
     @staticmethod
     def _utime_to_date(unix_time: int = time.time()) -> str:
