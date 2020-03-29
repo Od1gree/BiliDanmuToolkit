@@ -2,6 +2,7 @@ import requests
 import os
 import re
 import time
+import string
 from datetime import datetime, timedelta, timezone
 import xml.etree.ElementTree as et
 import json
@@ -394,10 +395,11 @@ class DanmuMaster(object):
         self.cid = re.search(pattern, html).group(1)
         self.title, timeUnix_str = re.search(pattern1, html).groups()
         self.timeUnix = int(timeUnix_str)
-        folder = "harvest/" + self.no + '_' + self.title + "/"
+        folder = "harvest/" + self.no + '_' + DanmuMaster.process_filename(self.title) + "/"
         if not os.path.exists(folder):
             os.mkdir(folder)
-        self.fileName = folder + self.no + '_' + self.title + '_p' + str(self.page)
+        file_name = DanmuMaster.process_filename(self.no + '_' + self.title + '_p' + self.page)
+        self.fileName = folder + file_name
 
     # 番剧没有视频发布时间,需要通过获取 历史弹幕月 来确定历史弹幕停止时间
     def _get_info_ep(self, url: str,):
@@ -427,10 +429,12 @@ class DanmuMaster(object):
         self.timeUnix = time.time()
         self.ssid = "ss" + str(ep_json['mediaInfo']['ssId'])
         self.page = bangumi['title']
-        folder = "harvest/" + self.ssid + '_' + ep_json['mediaInfo']['title'] + "/"
+        folder_name = DanmuMaster.process_filename(self.ssid + '_' + ep_json['mediaInfo']['title'])
+        folder = "harvest/" + folder_name + "/"
         if not os.path.exists(folder):
             os.mkdir(folder)
-        self.fileName = folder + self.no + '_' + self.title + '_p' + self.page
+        file_name = DanmuMaster.process_filename(self.no + '_' + self.title + '_p' + self.page)
+        self.fileName = folder + file_name
 
     @staticmethod
     def get_epinfo_in_html(html):
@@ -445,6 +449,11 @@ class DanmuMaster(object):
                 break
         ep_json = json.loads(ep_json_str)
         return ep_json
+
+    @staticmethod
+    def process_filename(filename: str):
+        table = str.maketrans(r'/$#&@+*', r'%%%%%%%', "")
+        return filename.translate(table)
 
 
 if __name__ == '__main__':
