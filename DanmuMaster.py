@@ -174,16 +174,20 @@ class DanmuMaster(object):
     def listen_ss_once(self):
         content_bytes = Spider.get_current_danmu(self.cid, self.url)
         now = datetime.fromtimestamp(time.time(), timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S')
-        print(now, "获取了弹幕")
+        print(now, self.title, "获取了弹幕:",)
         with open(self.fileName + '_latest_' + str(int(time.time())) + '.xml', 'wb') as f:
             f.write(content_bytes)
         danmu = DanmuFile.init_from_str(content_bytes.decode('utf-8'))
+        ratio = -1
         if self.danmu_set is not None:
             _, inc, _ = DanmuCombinator.diff(self.danmu_set, danmu)
             ratio = len(inc) / int(danmu.max_limit)
-            print("时间比例:", ratio, )
-            return ratio
-        return 0.1
+            print("\t时间比例:", ratio, )
+        else:
+            print("首次获取",)
+        self.danmu_set = danmu
+        self.timeProgress = int(time.time())
+        return ratio
 
 
     def pre_init_from_ep_json(self, ep: dict, ss_id: str):
@@ -197,9 +201,11 @@ class DanmuMaster(object):
         self.url = "https://www.bilibili.com/bangumi/play/" + self.no
         self.ssid = ss_id
 
-
-    def _check_ep_exist(self):
+    def check_ep_exist(self):
         response = Spider.get_html(self.url)
+        if response is None:
+            print("未获取到:", self.title,)
+            return False
         ep_json = self.get_epinfo_in_html(response)
         ep_int = int(self.no[2:])
         new_series = ep_json['epList']
@@ -417,7 +423,7 @@ class DanmuMaster(object):
         # print(ep_json)
         self.cid = str(bangumi['cid'])
         self.no = 'ep' + str(bangumi['id'])
-        self.title = ep_json['h1Title']
+        self.title = ep_json['mediaInfo']['title'] + ':' + bangumi['titleFormat'] + ' ' + bangumi['longTitle']
         self.timeUnix = time.time()
         self.ssid = "ss" + str(ep_json['mediaInfo']['ssId'])
         self.page = bangumi['title']

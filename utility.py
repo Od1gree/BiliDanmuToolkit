@@ -1,20 +1,24 @@
 class TaskNode(object):
-    def __init__(self, data, utime: int, priority=1):
+    def __init__(self, data, utime: int, priority=1, node_type: int = 0):
         self.next = None
         self.content = data
         self.priority = priority
         self.utime = utime
+        self.node_type = node_type
 
 
 class TaskQueue(object):
     def __init__(self):
         self._root = TaskNode(None, 0)
 
-    def add_task(self, data, utime: int, priority=1):
-        new_node = TaskNode(data, utime, priority)
+    def add_task(self, data, utime: int, priority=1, node_type: int = 0):
+        new_node = TaskNode(data, utime, priority, node_type)
         self._add(new_node)
 
-    def get_task(self):
+    def return_task(self, exist_node: TaskNode):
+        self._add(exist_node)
+
+    def pop_task(self):
         if self._root.next is None:
             print("无任务, 退出.")
             exit(1)

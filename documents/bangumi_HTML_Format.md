@@ -50,7 +50,7 @@ url为 `https://www.bilibili.com/bangumi/play/epxxxxx`
         "ver": {},
         "ssr": {},
         "loginInfo": {},
-        "h1Title": "系列名+标题",
+        "h1Title": "系列名+标题",  // 如果是ss链接则标题不存在
         "mediaInfo": {
           "stat": {
             "coins": 123,
