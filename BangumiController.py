@@ -15,7 +15,7 @@ class Listener(object):
     TYPE_REFRESH = 2
     TYPE_GETLIST = 3
 
-    def __init__(self, default_delay: int = 30, max_delay: int = 5400):
+    def __init__(self, default_delay: int = 30, max_delay: int = 7200):
         self._bangumi_map: dict = {}  # K为番剧ssid, v为已经纳入队列的列表
         self._next_update: dict = {}
         self._cookie_path: str = ''
@@ -44,6 +44,7 @@ class Listener(object):
             html = Spider.get_html(url)
             ep_json = DanmuMaster.get_epinfo_in_html(html)
             bangumi_list = []
+            print("[INFO] 开始载入番剧:", ep_json["mediaInfo"]['title'], end=' ')
             for ep in ep_json['epList']:
                 ep_int = ep['id']
                 task = DanmuMaster()
@@ -51,19 +52,21 @@ class Listener(object):
                 self._queue.add_task(task, int(time.time()), priority, Listener.TYPE_BANGUMI)
                 bangumi_list.append(task)
             self._bangumi_map[ss_id] = bangumi_list
+            print(",共", len(bangumi_list), "个任务.")
 
         self._exec_getlist_task()
 
     def start(self):
+        print("[INFO] 开始拉取数据")
         while True:
             current_task = self._queue.pop_task()
             now_int = int(time.time())
             distance = current_task.utime - now_int
             if distance < 1:
-                print("\n立即开始下一个任务")
+                print("\n[INFO] 立即开始下一个任务")
                 pass
             else:
-                print("\n休息", distance, "秒")
+                print("\n[INFO] 下一个任务在", distance, "秒后执行")
                 time.sleep(distance)
             if current_task.node_type is Listener.TYPE_BANGUMI:
                 current_task = self._exec_bangumi_task(current_task)
@@ -72,7 +75,7 @@ class Listener(object):
             self._queue.return_task(current_task)
 
     def _exec_bangumi_task(self, task: TaskNode):
-        bangumi:DanmuMaster = task.content
+        bangumi: DanmuMaster = task.content
         prev_time = bangumi.timeProgress
         ratio = bangumi.listen_ss_once()
         task.utime = self._calc_delay_sec(prev_time, ratio)
@@ -115,8 +118,9 @@ class Listener(object):
         else:
             calc_delta = time_delta * 3 * (1-ratio*6)
 
-        print(calc_delta, "秒之后再次获取")
-        return current_time + int(calc_delta)
+        calc_delta = min(int(calc_delta), self._max_delay)
+        print("[INFO] 此任务", calc_delta, "秒之后再次执行")
+        return current_time + calc_delta
 
     def _resolve_json(self, bangumi_json: dict):
         index = 0
@@ -145,6 +149,8 @@ class Listener(object):
                         task.pre_init_from_ep_json(bangumi, ss_id)
                         self._next_update[ss_id] = task
                         self._queue.add_task(task, bangumi['pub_ts'], self._priority_dict[ss_id], Listener.TYPE_REFRESH)
+                        print("[INFO] 已预订获取新剧集", bangumi['title'] + bangumi['pub_index'],
+                              "将于", bangumi['pub_ts'] - now_int, "秒之后开始尝试获取.")
 
         self._queue.add_task(None, utime=now_int + 3600*24*6, priority=1, node_type=Listener.TYPE_GETLIST)
 

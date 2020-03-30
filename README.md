@@ -127,7 +127,7 @@ $ python DanmuMaster.py 'https://www.bilibili.com/video/av314'
 
 注2: 获取到的弹幕样例在harvest文件夹.
 
-注3: 由于commandline控制还未实现, 其他已实现的功能需要自己修改代码调用.
+注3: 由于commandline控制还未实现, 其他已实现的功能需要自己编写~~~~代码调用.
 
 ## 注意事项
 B站对API接口的限制以及弹幕数据库的限制会影响获取的效果, 有时会因官方服务器波动而获取不全面, 需要等待几天后再尝试.

@@ -118,7 +118,7 @@ class Spider(object):
     def get_bangumi_timeline(timeline_type: str):
         time.sleep(5)
         req = 'https://bangumi.bilibili.com/web_api/' + timeline_type
-        print('request bangumi timeline')
+        print('[INFO] 请求新番时间表:', timeline_type)
         header = {
             'Accept': 'application/json, text/plain, */*',
             'Accept-Encoding': 'gzip, deflate, br',

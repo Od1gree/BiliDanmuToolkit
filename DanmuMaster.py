@@ -175,7 +175,7 @@ class DanmuMaster(object):
     def listen_ss_once(self):
         content_bytes = Spider.get_current_danmu(self.cid, self.url)
         now = datetime.fromtimestamp(time.time(), timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S')
-        print(now, self.title, "获取了弹幕:", end=' ')
+        print('[INFO]', now, self.title)
         with open(self.fileName + '_latest_' + str(int(time.time())) + '.xml', 'wb') as f:
             f.write(content_bytes)
         danmu = DanmuFile.init_from_str(content_bytes.decode('utf-8'))
@@ -183,7 +183,7 @@ class DanmuMaster(object):
         if self.danmu_set is not None:
             _, inc, _ = DanmuCombinator.diff(self.danmu_set, danmu)
             ratio = len(inc) / int(danmu.max_limit)
-            print("\t时间比例:", ratio)
+            print("[INFO] 算得时间比例:", ratio)
         else:
             print("首次获取")
         self.danmu_set = danmu
@@ -205,7 +205,7 @@ class DanmuMaster(object):
     def check_ep_exist(self):
         response = Spider.get_html(self.url)
         if response is None:
-            print("未获取到:", self.title)
+            print("[WARNING] 未获取到:", self.title)
             return False
         ep_json = self.get_epinfo_in_html(response)
         ep_int = int(self.no[2:])
@@ -213,6 +213,7 @@ class DanmuMaster(object):
         for ep in new_series:
             if ep['ep_id'] == ep_int:
                 self.init_from_ep_json(ep_json, ep_int, self.cookie_path)
+                print("[INFO] 新剧集:", ep_json['h1Title'], "已放出")
                 return True
         return False
 
