@@ -187,5 +187,7 @@ class Listener(object):
         :param unix_time: int型unix时间戳, 按秒计.
         :return: unix时间所在的小时数字.
         """
+        dt = datetime.fromtimestamp(unix_time, timezone(timedelta(hours=8)))
+        return dt.hour
 
 

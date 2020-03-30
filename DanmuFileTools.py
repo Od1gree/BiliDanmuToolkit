@@ -210,8 +210,8 @@ class DanmuCombinator(object):
         len1 = len(dic1)
         len2 = len(dic2)
         len_common = len(common)
-        print("文件1独有", len1, )
-        print("文件2独有", len2, )
+        print("文件1独有", len1, end=' ')
+        print("文件2独有", len2, end=' ')
         print("二者共有", len_common)
         return dic1, dic2, common
 
