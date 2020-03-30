@@ -211,7 +211,7 @@ class DanmuMaster(object):
         ep_int = int(self.no[2:])
         new_series = ep_json['epList']
         for ep in new_series:
-            if ep['ep_id'] == ep_int:
+            if ep['id'] == ep_int:
                 self.init_from_ep_json(ep_json, ep_int, self.cookie_path)
                 print("[INFO] 新剧集:", ep_json['h1Title'], "已放出")
                 return True
