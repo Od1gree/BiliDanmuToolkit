@@ -14,6 +14,7 @@ class Listener(object):
     TYPE_BANGUMI = 1
     TYPE_REFRESH = 2
     TYPE_GETLIST = 3
+    TYPE_PRIORITY_CHANGE = 4
 
     def __init__(self, default_delay: int = 30, max_delay: int = 7200):
         self._bangumi_map: dict = {}  # K为番剧ssid, v为已经纳入队列的列表
@@ -63,15 +64,18 @@ class Listener(object):
             now_int = int(time.time())
             distance = current_task.utime - now_int
             if distance < 1:
-                print("\n[INFO] 立即开始下一个任务")
+                print("[INFO] 立即开始下一个任务\n")
                 pass
             else:
-                print("\n[INFO] 下一个任务在", distance, "秒后执行")
+                print("[INFO] 下一个任务在", distance, "秒后执行\n")
                 time.sleep(distance)
             if current_task.node_type is Listener.TYPE_BANGUMI:
                 current_task = self._exec_bangumi_task(current_task)
             elif current_task.node_type is Listener.TYPE_REFRESH:
                 current_task = self._exec_refresh_task(current_task)
+            elif current_task.node_type is Listener.TYPE_PRIORITY_CHANGE:
+                self._exec_priority_change(current_task)
+                continue
             self._queue.return_task(current_task)
 
     def _exec_bangumi_task(self, task: TaskNode):
@@ -83,17 +87,23 @@ class Listener(object):
 
     def _exec_refresh_task(self, task: TaskNode):
         bangumi:DanmuMaster = task.content
+        now_int = int(time.time())
         if bangumi.check_ep_exist():
             bangumi.listen_ss_once()
             task.node_type = Listener.TYPE_BANGUMI
             self._next_update.pop(bangumi.ssid)
-        task.utime = int(time.time()) + self._default_delay
+            # 8天后(考虑到没有大会员的同学会晚7天看)回归原优先级
+            self._queue.add_task(task, now_int + 3600*24*8, priority=0, node_type=Listener.TYPE_PRIORITY_CHANGE)
+        task.utime = now_int + self._default_delay
         return task
 
     def _exec_getlist_task(self):
         for timeline in ['timeline_global', 'timeline_cn']:
             bangumi_json = json.loads(Spider.get_bangumi_timeline(timeline).decode('utf-8'))
             self._resolve_json(bangumi_json)
+
+    def _exec_priority_change(self, task: TaskNode):
+        task.content.priority += 10
 
     def _calc_delay_sec(self, prev_time: int, ratio: float):
         current_time = int(time.time())
@@ -148,7 +158,8 @@ class Listener(object):
                         task = DanmuMaster()
                         task.pre_init_from_ep_json(bangumi, ss_id)
                         self._next_update[ss_id] = task
-                        self._queue.add_task(task, bangumi['pub_ts'], self._priority_dict[ss_id], Listener.TYPE_REFRESH)
+                        # 新出的剧集优先级提前十级.
+                        self._queue.add_task(task, bangumi['pub_ts'], self._priority_dict[ss_id]-10, Listener.TYPE_REFRESH)
                         print("[INFO] 已预订获取新剧集", bangumi['title'] + bangumi['pub_index'],
                               "将于", bangumi['pub_ts'] - now_int, "秒之后开始尝试获取.")
 

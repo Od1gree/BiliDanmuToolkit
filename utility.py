@@ -19,6 +19,8 @@ class TaskQueue(object):
         self._add(new_node)
 
     def return_task(self, exist_node: TaskNode):
+        if exist_node is None:
+            return
         self._add(exist_node)
 
     def pop_task(self):

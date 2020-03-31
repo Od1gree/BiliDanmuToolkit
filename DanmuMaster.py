@@ -175,17 +175,19 @@ class DanmuMaster(object):
     def listen_ss_once(self):
         content_bytes = Spider.get_current_danmu(self.cid, self.url)
         now = datetime.fromtimestamp(time.time(), timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S')
-        print('[INFO]', now, self.title)
+        print('[TASK]', now, "获取:[", self.title, "]")
         with open(self.fileName + '_latest_' + str(int(time.time())) + '.xml', 'wb') as f:
             f.write(content_bytes)
         danmu = DanmuFile.init_from_str(content_bytes.decode('utf-8'))
         ratio = -1
         if self.danmu_set is not None:
-            _, inc, _ = DanmuCombinator.diff(self.danmu_set, danmu)
-            ratio = len(inc) / int(danmu.max_limit)
-            print("[INFO] 算得时间比例:", ratio)
+            dep, inc, com = DanmuCombinator.diff(self.danmu_set, danmu)
+            dep_int, inc_int, com_int = len(dep), len(inc), len(com)
+            print("[TASK] 原有弹幕数[", dep_int+com_int, "], 新增弹幕数[", inc_int, end=' ], ')
+            ratio = inc_int / int(danmu.max_limit)
+            print("算得新增比例:[", format(ratio, '0.5f'), "]")
         else:
-            print("首次获取")
+            print("[TASK]首次获取")
         self.danmu_set = danmu
         self.timeProgress = int(time.time())
         return ratio
@@ -213,7 +215,7 @@ class DanmuMaster(object):
         for ep in new_series:
             if ep['id'] == ep_int:
                 self.init_from_ep_json(ep_json, ep_int, self.cookie_path)
-                print("[INFO] 新剧集:", ep_json['h1Title'], "已放出")
+                print("[TASK] 新剧集:", ep_json['h1Title'], "已放出")
                 return True
         return False
 

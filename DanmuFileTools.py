@@ -199,20 +199,22 @@ class DanmuFile(object):
 class DanmuCombinator(object):
 
     @staticmethod
-    def diff(dm1: DanmuFile, dm2: DanmuFile) -> (dict, dict, dict):
+    def diff(dm1: DanmuFile, dm2: DanmuFile, is_print: bool = False) -> (dict, dict, dict):
         """
         比较两个弹幕文件的相同和不同
         :param dm1: DanmuFile类
         :param dm2: DanmuFile类
+        :param is_print: 是否在函数中直接打印比对结果
         :return: (文件1独有, 文件2独有, 共有)
         """
         dic1, dic2, common = DanmuCombinator._xor(dm1.get_dic(), dm2.get_dic())
         len1 = len(dic1)
         len2 = len(dic2)
         len_common = len(common)
-        print("文件1独有", len1, end=' ')
-        print("文件2独有", len2, end=' ')
-        print("二者共有", len_common)
+        if is_print:
+            print("文件1独有", len1, end=' ')
+            print("文件2独有", len2, end=' ')
+            print("二者共有", len_common)
         return dic1, dic2, common
 
     @staticmethod
