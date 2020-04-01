@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 from DanmuSpider import Spider
 from DanmuFileTools import *
+from utility import Converter
 
 '''
 弹幕格式如下
@@ -121,17 +122,9 @@ class DanmuMaster(object):
         :param interval_sec: 每次获取间隔的初始时间, 时间 > 10秒
         :return:
         """
-        input_time = None
+        target_time = Converter.str_to_timestamp(time_str)
         interval_sec = max(interval_sec, 11)
-        try:
-            input_time = datetime.fromisoformat(time_str)
-        except Exception as e:
-            print("输入的时间字符串有问题:", e)
-            exit(1)
-        target_time = datetime(input_time.year, input_time.month, input_time.day,
-                               hour=input_time.hour, minute=input_time.minute,
-                               tzinfo=timezone(timedelta(hours=8)))
-        sec_wait = max(11, int(target_time.timestamp()) - int(time.time()))
+        sec_wait = max(11, target_time - int(time.time()))
         print("wait:", sec_wait, "seconds")
         time.sleep(sec_wait - 10)
 

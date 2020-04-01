@@ -1,5 +1,5 @@
-from DanmuMaster import DanmuMaster
-
+from DanmuMaster import *
+from datetime import datetime, timedelta, timezone
 
 class TaskNode(object):
     def __init__(self, data, utime: int, priority=1, node_type: int = 0):
@@ -17,6 +17,7 @@ class TaskQueue(object):
     def add_task(self, data, utime: int, priority=1, node_type: int = 0):
         new_node = TaskNode(data, utime, priority, node_type)
         self._add(new_node)
+        return new_node
 
     def return_task(self, exist_node: TaskNode):
         if exist_node is None:
@@ -60,3 +61,21 @@ class Converter(object):
         dm = DanmuMaster()
         dm.init_from_ep(ep_str)
         return dm.ssid
+
+    @staticmethod
+    def str_to_timestamp(time_str: str) -> int:
+        """
+        将北京时间的时间字符串转化为unix时间戳.
+        :param time_str: 视频更新时间,格式为 "yyyy-mm-ddThh:mm",例如 "2020-01-02T03:04"
+        :return: int型unix时间戳
+        """
+        time_int = -1
+        try:
+            time_int = datetime.fromisoformat(time_str)
+        except Exception as e:
+            print("输入的时间字符串有问题:", e)
+            exit(1)
+        target_time = datetime(time_int.year, time_int.month, time_int.day,
+                               hour=time_int.hour, minute=time_int.minute,
+                               tzinfo=timezone(timedelta(hours=8)))
+        return int(target_time.timestamp())
