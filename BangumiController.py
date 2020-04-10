@@ -146,6 +146,8 @@ class Listener(object):
             calc_delta = time_delta / (ratio*1.5 + 1)
         elif 0.1 < ratio <= 0.3:
             calc_delta = time_delta / (ratio + 0.8)
+        elif ratio < 0:
+            calc_delta = self._default_delay
         else:
             calc_delta = time_delta * 3 * (1-ratio*6)
 

@@ -167,6 +167,8 @@ class DanmuMaster(object):
 
     def listen_ss_once(self):
         content_bytes = Spider.get_current_danmu(self.cid, self.url)
+        if content_bytes is None:
+            return -1
         now = datetime.fromtimestamp(time.time(), timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S')
         print('[TASK]', now, "获取:[", self.title, "]")
         with open(self.fileName + '_latest_' + str(int(time.time())) + '.xml', 'wb') as f:
@@ -220,7 +222,9 @@ class DanmuMaster(object):
         """
         # get cid, time, title
         overall = 0
-        self._get_current_danmu()
+        if self._get_current_danmu() is False:
+            print("无法获取当前弹幕, 终止获取当前视频.")
+            return
 
         try:
             xml_file = open(self.fileName+'.xml', 'rt', encoding='utf-8')
@@ -358,13 +362,15 @@ class DanmuMaster(object):
 
     def _get_current_danmu(self):
         content_bytes = Spider.get_current_danmu(self.cid, self.url)
-
+        if content_bytes is None:
+            return False
         # 将要与历史弹幕整合的弹幕文件
         with open(self.fileName+'.xml', 'wb') as f:
             f.write(content_bytes)
         # 当前弹幕池(上限数量)的弹幕
         with open(self.fileName+'_latest.xml', 'wb') as f:
             f.write(content_bytes)
+        return True
 
     def _get_history_danmu(self, date: str):
         """
