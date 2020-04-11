@@ -169,7 +169,7 @@ class Spider(object):
         response = None
         try:
             response = requests.get(req_url, headers=header)
-            return response.content
+            return response
         except Exception as e:
             if response is not None:
                 print("状态码:", response.status_code)
