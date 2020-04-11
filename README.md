@@ -115,7 +115,7 @@ python3 main.py --listen --bangumi 'bangumi_sample.cfg'
 
 ## 运行截图
 下面列出测试时的截图.
-#### 1.获取普通视频历史弹幕的截图
+### 1.获取普通视频历史弹幕的截图
 > 测试视频: av170001 p3
 
 开始运行的截图:
@@ -124,7 +124,7 @@ python3 main.py --listen --bangumi 'bangumi_sample.cfg'
 结束获取时的截图:
 ![结束运行](img/history_bv_end.jpg)
 
-#### 2.获取番剧历史弹幕的截图
+### 2.获取番剧历史弹幕的截图
 > 测试视频: 轻音少女第一季第十集 ep21274
 >
 > 此番剧在b站上架时间约为2019年5月.
@@ -132,8 +132,10 @@ python3 main.py --listen --bangumi 'bangumi_sample.cfg'
 截图如下:
 ![开始与结束](img/history_ep_begin_end.png)
 
-#### 3.监听番剧弹幕
+### 3.监听番剧弹幕
 >测试时包含新番(包含正在更新以及还未发布), 旧番, 电影 (电影目前仅支持手动预约)
+>
+>下图测试所使用的 bangumi.cfg 即为 bangumi_sample.cfg 中的内容
 >
 >配置文件的写法在 bangumi_sample.cfg 中有说明.
 
