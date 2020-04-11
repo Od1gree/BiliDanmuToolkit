@@ -248,7 +248,10 @@ class DanmuMaster(object):
             datetime.fromtimestamp(int(time.time()), timezone(timedelta(hours=8))),
             "%Y-%m-%d"
         )
-        pub_time_bj = datetime.fromtimestamp(self.timeUnix, timezone(timedelta(hours=8)))
+        if self.no[:2] == 'ep' or self.no[:2] == 'EP':
+            pub_time_bj = datetime.fromtimestamp(1, timezone(timedelta(hours=8)))
+        else:
+            pub_time_bj = datetime.fromtimestamp(self.timeUnix, timezone(timedelta(hours=8)))
         pub_date_str = datetime.strftime(pub_time_bj, "%Y-%m-%d")
 
         history_month_info = None
