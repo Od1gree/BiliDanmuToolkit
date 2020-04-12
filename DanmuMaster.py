@@ -312,8 +312,8 @@ class DanmuMaster(object):
             self.timeProgress = self._write_record(datetime.timestamp(progress_time_bj))
 
             # 获取到的弹幕数量小于弹幕池上限说明到头了
-            if int(root.find('maxlimit').text) > amount > 0:
-                print("弹幕数", amount, "少于上限且不为零, 可结束获取.")
+            if int(root.find('maxlimit').text)*0.5 > amount > 0:
+                print("弹幕数", amount, "少于上限的一半且不为零, 可结束获取.")
                 break
 
             if flag_zero > 5:
