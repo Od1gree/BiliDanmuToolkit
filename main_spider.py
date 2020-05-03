@@ -5,7 +5,7 @@ description = '一个下载弹幕的工具, 可实现历史弹幕下载, 以及�
               '此工具还处于开发阶段, 各项功能还不完善, 欢迎提交各种issue.' \
               '注: 使用爬虫会有IP被ban以及账号无法正常使用等风险, 使用前请知晓.'
 epilog = '获取一个视频的历史弹幕: ' \
-         'python3 main.py --history --cookie \'cookie_sample.cfg\' --video-num av314'
+         'python3 main_spider.py --history --cookie \'cookie_sample.cfg\' --video-num av314'
 
 
 if __name__ == '__main__':

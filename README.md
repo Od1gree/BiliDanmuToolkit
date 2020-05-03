@@ -100,11 +100,11 @@
 git clone https://github.com/Od1gree/BiliDanmuToolkit
 cd BiliDanmuToolkit/
 # 查看帮助文件
-python3 main.py --help
+python3 main_spider.py --help
 # 获取一个视频的历史弹幕
-python3 main.py --history --cookie 'cookie_sample.cfg' --video-num av314 --index 1
+python3 main_spider.py --history --cookie 'cookie_sample.cfg' --video-num av314 --index 1
 # 监听新番弹幕
-python3 main.py --listen --bangumi 'bangumi_sample.cfg'
+python3 main_spider.py --listen --bangumi 'bangumi_sample.cfg'
 ```
 
 注1: B站cookie直接从浏览器中查找cookie内容,并粘贴到`cookie.cfg`即可, 粘贴时不要带"Cookie:".

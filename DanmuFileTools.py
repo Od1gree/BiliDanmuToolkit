@@ -1,5 +1,7 @@
 import xml.etree.ElementTree as et
+from typing import List
 import time
+import html
 
 
 # 弹幕格式[0 时间(秒),1 样式,字号,2 颜色,3 UNIX-time,4 弹幕池,5 用户,6 rowID, 7 弹幕内容]
@@ -37,7 +39,7 @@ class Danmu(object):
                + self.pooltype + ',' \
                + self.user + ',' \
                + self.rowid + '">' \
-               + self.text + '</d>'
+               + html.escape(self.text) + '</d>'
         return text
 
 
@@ -121,6 +123,23 @@ class DanmuFile(object):
             print("xml字符串有误:", e, "\nxml内容如下:", xml_str)
             exit(1)
         return DanmuFile(root=root, summary=summary)
+
+    def combine(self, danmu_ext):
+        """
+        从 DanmuFile 中合并弹幕
+        :param danmu_ext: 需要合并的弹幕文件
+        :return: None
+        """
+        dict_ext = danmu_ext.get_dic()
+        for rowid in dict_ext:
+            if self._danmu_dict.get(rowid):
+                continue
+            else:
+                danmu = dict_ext[rowid]
+                self._danmu_dict[rowid] = danmu
+                self.count += 1
+                self.style[danmu.style] += 1
+                self.pool[danmu.pooltype] += 1
 
     def to_str(self):
         head = u'<?xml version="1.0" encoding="UTF-8"?>' \
@@ -218,10 +237,10 @@ class DanmuCombinator(object):
         return dic1, dic2, common
 
     @staticmethod
-    def combine(dm1: dict, dm2: dict, force: bool = False) -> dict:
+    def combine(dm_list: List[DanmuFile]) -> dict:
         comb = {}
-        comb.update(dm1)
-        comb.update(dm2)
+        for item in dm_list:
+            comb.update(item.get_dic())
         return comb
 
     @staticmethod

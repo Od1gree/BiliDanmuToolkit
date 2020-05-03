@@ -430,7 +430,7 @@ class DanmuMaster(object):
         # print(ep_json)
         self.cid = str(bangumi['cid'])
         self.no = 'ep' + str(bangumi['id'])
-        self.title = ep_json['mediaInfo']['title'] + ':' + bangumi['titleFormat'] + ' ' + bangumi['longTitle']
+        self.title = ep_json['mediaInfo']['title'] + ':' + bangumi['titleFormat'] + '_' + bangumi['longTitle']
         self.timeUnix = time.time()
         self.ssid = "ss" + str(ep_json['mediaInfo']['ssId'])
         self.page = bangumi['title']
@@ -457,7 +457,7 @@ class DanmuMaster(object):
 
     @staticmethod
     def process_filename(filename: str):
-        table = str.maketrans(r'/$#&@+*', r'%%%%%%%', "")
+        table = str.maketrans(r'/$#&@+* ', r'%%%%%%%%', "")
         return filename.translate(table)
 
 
