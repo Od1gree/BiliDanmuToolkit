@@ -146,7 +146,7 @@ class Spider(object):
     def _history_request(ref: str, req_url: str, cookie_path: str):
         cookie = ''
         try:
-            config = open(cookie_path, 'rt')
+            config = open(cookie_path, 'r')
             cookie = config.read()
             config.close()
         except Exception as e:

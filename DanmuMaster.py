@@ -241,7 +241,8 @@ class DanmuMaster(object):
 
         print("实时弹幕共有", overall, "个, 开始抓取历史弹幕")
         self.timeProgress = int(time.time())
-        progress_time_bj = datetime.fromtimestamp(self.timeProgress, timezone(timedelta(hours=8)))
+        # 从当天的前一天开始获取, 保证时差党可正常运行
+        progress_time_bj = datetime.fromtimestamp(self.timeProgress, timezone(timedelta(hours=-23)))
         progress_date_str = datetime.strftime(progress_time_bj, "%Y-%m-%d")
 
         req_date_str = datetime.strftime(
@@ -265,7 +266,6 @@ class DanmuMaster(object):
             req_date_str = progress_date_str
             xml_str = self._get_history_danmu(req_date_str)
             root = DanmuFile.init_from_str(xml_str).xml_root
-            # 如果cookie失效会在这里报错
 
             earliest = self.timeProgress
             for danmu in root.findall('d'):
@@ -364,8 +364,13 @@ class DanmuMaster(object):
             self.fileName = record['fileName']
 
     def _get_current_danmu(self):
-        content_bytes = Spider.get_current_danmu(self.cid, self.url)
+        content_bytes = None
+        none_count = 0
+        while content_bytes is None and none_count < 5:
+            content_bytes = Spider.get_history_danmu(self.cid, self.url, date, self.cookie_path)
+            none_count += 1
         if content_bytes is None:
+            print("多次请求失败.")
             return False
         # 将要与历史弹幕整合的弹幕文件
         with open(self.fileName+'.xml', 'wb') as f:
@@ -381,7 +386,14 @@ class DanmuMaster(object):
         :param date: date string in 'YYYY-MM-DD' format
         :return: xml string in UTF-8 encoding
         """
-        content_bytes = Spider.get_history_danmu(self.cid, self.url, date, self.cookie_path)
+        content_bytes = None
+        none_count = 0
+        while content_bytes is None and none_count < 5:
+            content_bytes = Spider.get_history_danmu(self.cid, self.url, date, self.cookie_path)
+            none_count += 1
+        if content_bytes is None:
+            print("多次请求失败, 退出程序.")
+
         xml_str = content_bytes.decode('utf-8')
         with open(self.fileName + '_' + date + '.xml', 'wb') as f:
             f.write(content_bytes)
@@ -394,7 +406,14 @@ class DanmuMaster(object):
         return json_str
 
     def _get_info_av(self, url: str):
-        html = Spider.get_html(url)
+        html = None
+        none_times = 0
+        while html is None and none_times < 5:
+            html = Spider.get_html(url)
+            none_times += 1
+        if html is None:
+            print("多次请求番剧信息失败")
+            exit(1)
         pattern = re.compile(r'"cid":(\d+),"page":%s' % self.page)
         pattern1 = re.compile(r'"title":"(.*?)","pubdate":(\d+)')
         self.cid = re.search(pattern, html).group(1)
@@ -408,7 +427,14 @@ class DanmuMaster(object):
 
     # 番剧没有视频发布时间,需要通过获取 历史弹幕月 来确定历史弹幕停止时间
     def _get_info_ep(self, url: str,):
-        html = Spider.get_html(url)
+        html = None
+        none_times = 0
+        while html is None and none_times < 5:
+            html = Spider.get_html(url)
+            none_times += 1
+        if html is None:
+            print("多次请求番剧信息失败")
+            exit(1)
 
         ep_json = self.get_epinfo_in_html(html)
         self._resolve_ep_json(ep_json)

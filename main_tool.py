@@ -18,11 +18,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--combine-file', nargs='*', type=argparse.FileType('r+'),
                         help='合并文件, 多个文件之间使用空格隔开')
-    parser.add_argument('--combine-folder', type=str,
-                        help='合并指定文件夹中的所有弹幕')
+    # parser.add_argument('--combine-folder', type=str,
+    #                     help='合并指定文件夹中的所有弹幕, 支持文件夹中的弹幕分p(需符合特定文件名格式).')
     parser.add_argument('--output', type=str, default='output.xml',
                         help='合并之后的文件路径')
-
     parser.add_argument('--diff', nargs=2, type=argparse.FileType('r+'),
                         help='比较两个弹幕文件')
 
@@ -30,8 +29,9 @@ if __name__ == '__main__':
 
     if config.combine_file:
         combine(config.combine_file, config.output)
-
-    if config.diff:
+    elif config.diff:
         file1 = DanmuFile.init_from_str(config.diff[0].read())
         file2 = DanmuFile.init_from_str(config.diff[1].read())
         DanmuCombinator.diff(file1, file2, True)
+    elif config.combine_folder:
+        pass
