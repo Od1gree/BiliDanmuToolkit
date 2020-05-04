@@ -96,6 +96,11 @@
 
 ## 使用方法
 目前加入命令行参数的功能有限, 可通过`--help`查询.
+
+`main_spider.py`用于获取弹幕;
+
+`main_tool.py`用于处理弹幕文件.
+
 ```shell script
 git clone https://github.com/Od1gree/BiliDanmuToolkit
 cd BiliDanmuToolkit/
@@ -105,6 +110,10 @@ python3 main_spider.py --help
 python3 main_spider.py --history --cookie 'cookie_sample.cfg' --video-num av314 --index 1
 # 监听新番弹幕
 python3 main_spider.py --listen --bangumi 'bangumi_sample.cfg'
+# 合并多个弹幕文件, 每个文件之间使用空格隔开, 路径中有空格的使用转义符即可.
+python3 main_tool.py --combine-file file1.xml file2.xml file3.xml --output out.xml
+# 检查两个弹幕文件的不同 (使用弹幕id匹配)
+python3 main_tool.py --diff file1.xml file2.xml
 ```
 
 注1: B站cookie直接从浏览器中查找cookie内容,并粘贴到`cookie.cfg`即可, 粘贴时不要带"Cookie:".
